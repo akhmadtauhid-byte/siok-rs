@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SIOK-RS — Rekap Operasi</title>
+<style>
+:root{--bg:#f4f6fa;--card:#fff;--ink:#1c2533;--mut:#5e6b80;--line:#dde3ee;--pri:#1657c7;--pri2:#e6eefc;--ok:#137a4b;--bad:#b3261e;--warn:#9a6700}
+@media (prefers-color-scheme:dark){:root{--bg:#10151d;--card:#182030;--ink:#e8edf6;--mut:#9aa7bd;--line:#2a3550;--pri:#6b9dff;--pri2:#1f2d4d;--ok:#4cc48a;--bad:#ff8a80;--warn:#e3b341}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1100px;margin:0 auto;padding:0 16px 40px}
+header{background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.hd{max-width:1100px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.hd h1{font-size:17px;margin:0;flex:1;min-width:160px}
+.hd small{color:var(--mut);font-weight:400;display:block;font-size:12px}
+nav{max-width:1100px;margin:0 auto;padding:0 16px;display:flex;gap:4px;overflow-x:auto}
+nav button{border:0;background:none;color:var(--mut);padding:10px 14px;font:inherit;font-weight:600;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap}
+nav button.on{color:var(--pri);border-color:var(--pri)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:16px}
+h2{font-size:16px;margin:0 0 12px}
+h3{font-size:14px;margin:18px 0 8px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+label{display:block;font-size:12.5px;color:var(--mut);margin-bottom:3px;font-weight:600}
+input,select,textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit;min-height:40px}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--pri);outline-offset:-1px}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.btn{border:0;background:var(--pri);color:#fff;padding:10px 16px;border-radius:8px;font:inherit;font-weight:600;cursor:pointer;min-height:40px}
+.btn.sec{background:var(--pri2);color:var(--pri)}
+.btn.bad{background:var(--bad);color:#fff}
+.btn.sm{padding:5px 10px;min-height:30px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:wait}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+.row>div{flex:1;min-width:150px}
+.row>div[style*="flex:0"]{flex:0 0 auto!important;min-width:0!important}
+.tblw{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{background:var(--pri2);color:var(--pri);font-size:12.5px;position:sticky;top:0}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+tr.tot td{font-weight:700;background:var(--bg)}
+.stats{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
+.stat{background:var(--pri2);border-radius:10px;padding:12px}
+.stat b{display:block;font-size:26px;color:var(--pri);line-height:1.1}
+.stat span{font-size:12.5px;color:var(--mut)}
+.bar{height:8px;border-radius:4px;background:var(--pri);min-width:2px}
+.tag{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;font-weight:600;background:var(--pri2);color:var(--pri)}
+.tag.Umum{background:#e5f5ec;color:var(--ok)}.tag.Asuransi{background:#fff3d6;color:var(--warn)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:var(--card);color:var(--mut);padding:7px 12px;font:inherit;cursor:pointer;font-weight:600}
+.seg button.on{background:var(--pri);color:#fff}
+#toast{pointer-events:none;position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#1c2533;color:#fff;padding:10px 16px;border-radius:8px;display:none;z-index:20;max-width:90vw}
+#toast.err{background:var(--bad)}
+.login{max-width:340px;margin:12vh auto 0}
+.hide{display:none!important}
+.mut{color:var(--mut);font-size:13px}
+.tim{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+</style>
+</head>
+<body>
+
+<div id="loginView" class="wrap">
+  <div class="card login">
+    <h2>SIOK-RS<small class="mut" style="display:block;font-weight:400">Rekap Operasi · RSU Allam Medica</small></h2>
+    <label for="pin">PIN</label>
+    <input id="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="Masukkan PIN">
+    <div style="margin-top:12px"><button class="btn" id="btnLogin" style="width:100%">Masuk</button></div>
+    <p id="loginErr" class="mut" style="color:var(--bad)"></p>
+  </div>
+</div>
+
+<div id="appView" class="hide">
+  <header>
+    <div class="hd">
+      <h1>SIOK-RS <small>Rekap Operasi · RSU Allam Medica</small></h1>
+      <span class="mut" id="who"></span>
+      <button class="btn sec sm" id="btnOut">Keluar</button>
+    </div>
+    <nav id="nav"></nav>
+  </header>
+  <div class="wrap">
+
+    <!-- REKAP -->
+    <section id="tab-rekap">
+      <div class="card">
+        <div class="row">
+          <div><label>Dari</label><input type="date" id="rDari"></div>
+          <div><label>Sampai</label><input type="date" id="rSampai"></div>
+          <div><label>Spesialis</label><select id="rSpes"></select></div>
+          <div style="flex:0"><button class="btn" id="rGo">Tampilkan</button></div>
+        </div>
+      </div>
+      <div class="card" id="rOut"><span class="mut">Memuat…</span></div>
+    </section>
+
+    <!-- INPUT -->
+    <section id="tab-input" class="hide">
+      <div class="card">
+        <h2 id="formTitle">Input Operasi Baru</h2>
+        <form id="frm" autocomplete="off">
+          <div class="grid">
+            <div><label>Tanggal *</label><input type="date" id="fTgl" required></div>
+            <div><label>No. RM</label><input id="fRm"></div>
+            <div><label>Nama Pasien *</label><input id="fNama" required></div>
+            <div><label>Alamat</label><input id="fAlamat"></div>
+            <div><label>Kelas / Ruang</label><input id="fKelas"></div>
+            <div><label>Spesialis *</label><select id="fSpes" required></select></div>
+            <div><label>Tindakan *</label><input id="fTind" list="dlTind" required><datalist id="dlTind"></datalist></div>
+            <div><label>Penjamin *</label><select id="fPenj" required></select></div>
+            <div id="wAsu" class="hide"><label>Nama Asuransi</label><input id="fAsu"></div>
+          </div>
+          <h3>Tim Operasi</h3>
+          <div class="tim" id="timBox"></div>
+          <div style="margin-top:12px"><label>Catatan</label><textarea id="fCat" rows="2"></textarea></div>
+          <div class="row" style="margin-top:14px">
+            <div style="flex:0"><button class="btn" id="btnSave" type="submit">Simpan</button></div>
+            <div style="flex:0"><button class="btn sec hide" id="btnCancel" type="button">Batal edit</button></div>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- DAFTAR -->
+    <section id="tab-daftar" class="hide">
+      <div class="card">
+        <div class="row">
+          <div><label>Dari</label><input type="date" id="dDari"></div>
+          <div><label>Sampai</label><input type="date" id="dSampai"></div>
+          <div><label>Spesialis</label><select id="dSpes"></select></div>
+          <div><label>Penjamin</label><select id="dPenj"></select></div>
+          <div><label>Cari pasien / RM / tindakan</label><input id="dQ"></div>
+          <div style="flex:0"><button class="btn" id="dGo">Tampilkan</button></div>
+        </div>
+      </div>
+      <div class="card"><div id="dOut"></div></div>
+    </section>
+
+    <!-- MASTER -->
+    <section id="tab-master" class="hide">
+      <div class="card">
+        <div class="seg" id="mSeg"></div>
+        <div id="mOut" style="margin-top:14px"></div>
+      </div>
+    </section>
+
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+/* ===== KONFIGURASI ===== */
+const API_URL = 'API_URL';   // <-- WAJIB DIGANTI dengan URL Web App (kembalikan tiap index.html diganti total)
+
+/* ===== STATE & UTIL ===== */
+const $ = id => document.getElementById(id);
+let PIN = '', ME = null, M = null, OPS = [], EDIT_ID = '';
+const grup = p => p.replace(/\s*\d+$/, '');                 // "Operator 1" -> "Operator"
+const GRUPS = ['Operator', 'Dokter Anestesi', 'Penata Anestesi', 'Asisten', 'On Loop'];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const today = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset()*6e4).toISOString().slice(0,10); };
+const monthStart = () => today().slice(0,8) + '01';
+
+function toast(msg, err){ const t=$('toast'); t.textContent=msg; t.className=err?'err':''; t.style.display='block'; clearTimeout(toast.h); toast.h=setTimeout(()=>t.style.display='none',3500); }
+
+async function api(action, body={}){
+  if (API_URL === 'API_URL') throw new Error('API_URL belum diisi di index.html');
+  const r = await fetch(API_URL, { method:'POST', body: JSON.stringify({ action, pin: PIN, ...body }) });
+  const j = await r.json();
+  if (!j.ok) throw new Error(j.error || 'Gagal');
+  return j.data;
+}
+async function run(btn, fn){
+  if (btn) btn.disabled = true;
+  try { return await fn(); } catch(e){ toast(e.message, true); }
+  finally { if (btn) btn.disabled = false; }
+}
+function fillSel(el, list, first){
+  el.innerHTML = (first!==undefined ? `<option value="">${esc(first)}</option>` : '') + list.map(x=>`<option>${esc(x)}</option>`).join('');
+}
+function fmtTgl(s){ const [y,m,d]=s.split('-'); return `${d}/${m}/${y}`; }
+
+/* ===== LOGIN ===== */
+$('btnLogin').onclick = () => run($('btnLogin'), async () => {
+  PIN = $('pin').value.trim();
+  $('loginErr').textContent = '';
+  try { M = await api('bootstrap'); } catch(e){ $('loginErr').textContent = e.message; PIN=''; return; }
+  ME = M.user;
+  try { sessionStorage.setItem('siok_pin', PIN); } catch(e){}
+  start();
+});
+$('pin').addEventListener('keydown', e => { if (e.key==='Enter') $('btnLogin').click(); });
+$('btnOut').onclick = () => { try{sessionStorage.removeItem('siok_pin')}catch(e){}; location.reload(); };
+
+async function start(){
+  $('loginView').classList.add('hide'); $('appView').classList.remove('hide');
+  $('who').textContent = `${ME.nama} · ${ME.role}`;
+  const tabs = [['rekap','Rekap'],['input','Input Operasi'],['daftar','Daftar'],['master','Master']]
+    .filter(([k]) => (k==='input' ? ME.role!=='Viewer' : k==='master' ? ME.role==='Admin' : true));
+  $('nav').innerHTML = tabs.map(([k,l])=>`<button data-t="${k}">${l}</button>`).join('');
+  $('nav').onclick = e => { const b=e.target.closest('button'); if(b) showTab(b.dataset.t); };
+  initFilters(); buildForm();
+  showTab('rekap');
+}
+function showTab(t){
+  ['rekap','input','daftar','master'].forEach(k => $('tab-'+k).classList.toggle('hide', k!==t));
+  [...$('nav').children].forEach(b => b.classList.toggle('on', b.dataset.t===t));
+  if (t==='rekap') loadRekap(); if (t==='daftar') loadDaftar(); if (t==='master') loadMaster(curMaster);
+}
+function initFilters(){
+  fillSel($('rSpes'), M.spesialis, 'Semua spesialis');
+  fillSel($('dSpes'), M.spesialis, 'Semua spesialis');
+  fillSel($('dPenj'), M.penjamin, 'Semua penjamin');
+  $('rDari').value = $('dDari').value = monthStart();
+  $('rSampai').value = $('dSampai').value = today();
+  $('rGo').onclick = () => run($('rGo'), loadRekap);
+  $('dGo').onclick = () => run($('dGo'), loadDaftar);
+}
+
+/* ===== REKAP ===== */
+let REKAP_MODE = 'penjamin';   // 'penjamin' | 'peran'
+async function loadRekap(){
+  $('rOut').innerHTML = '<span class="mut">Memuat…</span>';
+  try { OPS = await api('listOperasi', { dari:$('rDari').value, sampai:$('rSampai').value }); }
+  catch(e){ $('rOut').innerHTML = `<span style="color:var(--bad)">${esc(e.message)}</span>`; return; }
+  renderRekap();
+}
+function renderRekap(){
+  const sp = $('rSpes').value;
+  const ops = OPS.filter(o => !sp || o.spesialis===sp);
+  const P = M.penjamin, S = M.spesialis;
+
+  // ringkasan
+  const cnt = k => ops.filter(o=>o.penjamin===k).length;
+  let h = `<h2>Ringkasan · ${fmtTgl($('rDari').value)} – ${fmtTgl($('rSampai').value)}${sp?' · '+esc(sp):''}</h2>
+  <div class="stats"><div class="stat"><b>${ops.length}</b><span>Total operasi</span></div>` +
+    P.map(k=>`<div class="stat"><b>${cnt(k)}</b><span>${esc(k)}</span></div>`).join('') + `</div>`;
+
+  // spesialis x penjamin
+  const mx = Math.max(1, ...S.map(s=>ops.filter(o=>o.spesialis===s).length));
+  h += `<h3>Per spesialis × penjamin</h3><div class="tblw"><table><thead><tr><th>Spesialis</th>${P.map(k=>`<th class="n">${esc(k)}</th>`).join('')}<th class="n">Total</th><th style="min-width:120px"></th></tr></thead><tbody>`;
+  S.forEach(s => {
+    const r = ops.filter(o=>o.spesialis===s);
+    h += `<tr><td>${esc(s)}</td>${P.map(k=>`<td class="n">${r.filter(o=>o.penjamin===k).length}</td>`).join('')}<td class="n"><b>${r.length}</b></td><td><div class="bar" style="width:${r.length/mx*100}%"></div></td></tr>`;
+  });
+  h += `<tr class="tot"><td>Total</td>${P.map(k=>`<td class="n">${cnt(k)}</td>`).join('')}<td class="n">${ops.length}</td><td></td></tr></tbody></table></div>`;
+
+  // per karyawan
+  const kar = {};
+  ops.forEach(o => {
+    const seen = new Set();
+    (o.tim||[]).forEach(t => {
+      const k = kar[t.karyawan_id] ||= { nama:t.karyawan_nama, ops:new Set(), pj:{}, gr:{} };
+      const g = grup(t.peran);
+      // hitung tiap operasi sekali per karyawan per kelompok peran / per penjamin
+      const keyG = o.id+'|'+t.karyawan_id+'|'+g; if (!seen.has(keyG)) { seen.add(keyG); k.gr[g]=(k.gr[g]||0)+1; }
+      if (!k.ops.has(o.id)) { k.ops.add(o.id); k.pj[o.penjamin]=(k.pj[o.penjamin]||0)+1; }
+    });
+  });
+  const prof = {}; M.karyawan.forEach(x => prof[x.id] = x.profesi);
+  const rows = Object.entries(kar).map(([id,k]) => ({id, ...k, total:k.ops.size})).sort((a,b)=>b.total-a.total || a.nama.localeCompare(b.nama));
+  const cols = REKAP_MODE==='penjamin' ? P : GRUPS;
+  const val = (r,c) => REKAP_MODE==='penjamin' ? (r.pj[c]||0) : (r.gr[c]||0);
+  h += `<h3>Rekap per karyawan</h3>
+  <div class="row" style="margin-bottom:8px"><div style="flex:0"><div class="seg">
+    <button data-m="penjamin" class="${REKAP_MODE==='penjamin'?'on':''}">Per penjamin</button>
+    <button data-m="peran" class="${REKAP_MODE==='peran'?'on':''}">Per peran</button></div></div>
+    <div style="flex:0"><button class="btn sec sm" id="btnCsv">Unduh CSV</button></div></div>
+  <div class="tblw"><table id="tblKar"><thead><tr><th>Nama</th><th>Profesi</th>${cols.map(c=>`<th class="n">${esc(c)}</th>`).join('')}<th class="n">Total operasi</th></tr></thead><tbody>` +
+    (rows.length ? rows.map(r=>`<tr><td>${esc(r.nama)}</td><td>${esc(prof[r.id]||'')}</td>${cols.map(c=>`<td class="n">${val(r,c)}</td>`).join('')}<td class="n"><b>${r.total}</b></td></tr>`).join('')
+      : `<tr><td colspan="${cols.length+3}" class="mut">Belum ada data tim operasi pada periode ini.</td></tr>`) +
+    `</tbody></table></div>
+  <p class="mut">"Total operasi" = jumlah operasi berbeda yang diikuti karyawan (tidak dobel bila menempati dua slot). ${REKAP_MODE==='peran'?'Kolom peran menggabungkan slot bernomor (mis. Operator 1 + 2).':''}</p>`;
+
+  $('rOut').innerHTML = h;
+  $('rOut').querySelectorAll('[data-m]').forEach(b => b.onclick = () => { REKAP_MODE=b.dataset.m; renderRekap(); });
+  const csvBtn = $('btnCsv'); if (csvBtn) csvBtn.onclick = () => {
+    const lines = [['Nama','Profesi',...cols,'Total operasi']].concat(rows.map(r=>[r.nama,prof[r.id]||'',...cols.map(c=>val(r,c)),r.total]));
+    const csv = '﻿' + lines.map(l=>l.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+    a.download = `rekap-operasi-karyawan_${$('rDari').value}_${$('rSampai').value}.csv`; a.click();
+  };
+}
+
+/* ===== FORM INPUT ===== */
+function buildForm(){
+  fillSel($('fSpes'), M.spesialis); fillSel($('fPenj'), M.penjamin);
+  $('timBox').innerHTML = M.peran.map((p,i)=>`<div><label>${esc(p)}</label><select data-p="${esc(p)}" id="tim${i}"></select></div>`).join('');
+  refreshKaryawan();
+  $('fSpes').onchange = refreshTindakan; refreshTindakan();
+  $('fPenj').onchange = () => $('wAsu').classList.toggle('hide', $('fPenj').value!=='Asuransi');
+  $('frm').onsubmit = ev => { ev.preventDefault(); run($('btnSave'), saveOp); };
+  $('btnCancel').onclick = resetForm;
+  resetForm();
+}
+function refreshKaryawan(){
+  const opts = '<option value="">— kosong —</option>' + [...M.karyawan].sort((a,b)=>a.nama.localeCompare(b.nama))
+    .map(k=>`<option value="${esc(k.id)}">${esc(k.nama)}${k.profesi?' ('+esc(k.profesi)+')':''}</option>`).join('');
+  $('timBox').querySelectorAll('select').forEach(s => { const v=s.value; s.innerHTML=opts; s.value=v; });
+}
+function refreshTindakan(){
+  const sp = $('fSpes').value;
+  $('dlTind').innerHTML = M.tindakan.filter(t=>!t.spesialis||t.spesialis===sp).map(t=>`<option value="${esc(t.nama)}">`).join('');
+}
+function resetForm(){
+  EDIT_ID='';
+  $('frm').reset(); $('fTgl').value = today();
+  $('timBox').querySelectorAll('select').forEach(s=>s.value='');
+  $('formTitle').textContent='Input Operasi Baru'; $('btnCancel').classList.add('hide'); $('btnSave').textContent='Simpan';
+  $('fPenj').onchange(); refreshTindakan();
+}
+async function saveOp(){
+  const tim = [...$('timBox').querySelectorAll('select')].filter(s=>s.value).map(s=>({peran:s.dataset.p, karyawan_id:s.value}));
+  const ids = tim.map(t=>t.karyawan_id);
+  if (new Set(ids).size !== ids.length) throw new Error('Satu karyawan tidak boleh mengisi dua slot pada operasi yang sama');
+  const data = { id:EDIT_ID, tanggal:$('fTgl').value, no_rm:$('fRm').value, nama_pasien:$('fNama').value, alamat:$('fAlamat').value,
+    kelas:$('fKelas').value, spesialis:$('fSpes').value, tindakan:$('fTind').value, penjamin:$('fPenj').value,
+    nama_asuransi:$('fAsu').value, catatan:$('fCat').value, tim };
+  await api('saveOperasi', { data });
+  toast(EDIT_ID ? 'Perubahan disimpan' : 'Operasi tersimpan');
+  const keepDate = $('fTgl').value;
+  resetForm(); $('fTgl').value = keepDate;
+}
+function editOp(id){
+  const o = OPS.find(x=>x.id===id); if(!o) return;
+  showTab('input'); EDIT_ID = id;
+  $('fTgl').value=o.tanggal; $('fRm').value=o.no_rm; $('fNama').value=o.nama_pasien; $('fAlamat').value=o.alamat; $('fKelas').value=o.kelas;
+  $('fSpes').value=o.spesialis; refreshTindakan(); $('fTind').value=o.tindakan; $('fPenj').value=o.penjamin; $('fPenj').onchange();
+  $('fAsu').value=o.nama_asuransi; $('fCat').value=o.catatan;
+  $('timBox').querySelectorAll('select').forEach(s=>{ const t=(o.tim||[]).find(x=>x.peran===s.dataset.p); s.value=t?t.karyawan_id:''; });
+  $('formTitle').textContent='Edit Operasi'; $('btnCancel').classList.remove('hide'); $('btnSave').textContent='Simpan perubahan';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ===== DAFTAR ===== */
+async function loadDaftar(){
+  $('dOut').innerHTML = '<span class="mut">Memuat…</span>';
+  try { OPS = await api('listOperasi', { dari:$('dDari').value, sampai:$('dSampai').value }); }
+  catch(e){ $('dOut').innerHTML = `<span style="color:var(--bad)">${esc(e.message)}</span>`; return; }
+  const sp=$('dSpes').value, pj=$('dPenj').value, q=$('dQ').value.toLowerCase();
+  const rows = OPS.filter(o => (!sp||o.spesialis===sp) && (!pj||o.penjamin===pj) &&
+    (!q || (o.nama_pasien+' '+o.no_rm+' '+o.tindakan).toLowerCase().includes(q)));
+  const canEdit = ME.role!=='Viewer', canDel = ME.role==='Admin';
+  $('dOut').innerHTML = `<p class="mut">${rows.length} operasi</p><div class="tblw"><table><thead><tr><th>Tanggal</th><th>Pasien</th><th>RM</th><th>Spesialis</th><th>Tindakan</th><th>Penjamin</th><th>Tim</th><th></th></tr></thead><tbody>` +
+    (rows.map(o=>`<tr><td>${fmtTgl(o.tanggal)}</td><td>${esc(o.nama_pasien)}</td><td>${esc(o.no_rm)}</td><td>${esc(o.spesialis)}</td><td>${esc(o.tindakan)}</td>
+      <td><span class="tag ${esc(o.penjamin)}">${esc(o.penjamin)}${o.nama_asuransi?' · '+esc(o.nama_asuransi):''}</span></td>
+      <td style="white-space:normal;min-width:220px;font-size:13px">${(o.tim||[]).map(t=>`<span class="mut">${esc(t.peran)}:</span> ${esc(t.karyawan_nama)}`).join('<br>')}</td>
+      <td>${canEdit?`<button class="btn sec sm" data-e="${esc(o.id)}">Edit</button>`:''} ${canDel?`<button class="btn bad sm" data-x="${esc(o.id)}">Hapus</button>`:''}</td></tr>`).join('')
+      || '<tr><td colspan="8" class="mut">Tidak ada data.</td></tr>') + '</tbody></table></div>';
+  $('dOut').querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>editOp(b.dataset.e));
+  $('dOut').querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{
+    if (!confirm('Hapus data operasi ini?')) return;
+    run(b, async()=>{ await api('deleteOperasi',{id:b.dataset.x}); toast('Dihapus'); loadDaftar(); });
+  });
+}
+
+/* ===== MASTER (Admin) ===== */
+let curMaster = 'Karyawan';
+const MCFG = {
+  Karyawan: { key:'id',  cols:[['nama','Nama'],['profesi','Profesi'],['unit','Unit']] },
+  Tindakan: { key:'id',  cols:[['nama','Nama tindakan'],['spesialis','Spesialis']] },
+  Users:    { key:'pin', cols:[['nama','Nama'],['role','Peran'],['pin','PIN']] }
+};
+async function loadMaster(name){
+  curMaster = name;
+  $('mSeg').innerHTML = Object.keys(MCFG).map(k=>`<button data-k="${k}" class="${k===name?'on':''}">${k==='Users'?'Pengguna':k}</button>`).join('');
+  $('mSeg').onclick = e => { const b=e.target.closest('button'); if(b) loadMaster(b.dataset.k); };
+  $('mOut').innerHTML = '<span class="mut">Memuat…</span>';
+  let rows; try { rows = await api('listMaster', { sheet:name }); } catch(e){ $('mOut').innerHTML=`<span style="color:var(--bad)">${esc(e.message)}</span>`; return; }
+  const c = MCFG[name];
+  const inp = ([f,l]) => f==='spesialis' ? `<div><label>${l}</label><select data-f="${f}"><option value="">Semua</option>${M.spesialis.map(s=>`<option>${s}</option>`).join('')}</select></div>`
+    : f==='role' ? `<div><label>${l}</label><select data-f="${f}"><option>Petugas</option><option>Viewer</option><option>Admin</option></select></div>`
+    : `<div><label>${l}</label><input data-f="${f}" ${f==='pin'?'inputmode="numeric"':''}></div>`;
+  let h = `<div class="row" id="mForm">${c.cols.map(inp).join('')}<div style="flex:0"><button class="btn" id="mAdd">Tambah</button></div></div>`;
+  if (name==='Karyawan') h += `<details style="margin-top:12px"><summary class="mut" style="cursor:pointer">Impor massal (tempel daftar)</summary>
+    <p class="mut">Satu baris per orang: <code>Nama;Profesi;Unit</code> (profesi &amp; unit boleh kosong). Nama yang sudah ada dilewati.</p>
+    <textarea id="mBulk" rows="6"></textarea><div style="margin-top:8px"><button class="btn sec" id="mImp">Impor</button></div></details>`;
+  h += `<div class="tblw" style="margin-top:14px"><table><thead><tr>${c.cols.map(x=>`<th>${x[1]}</th>`).join('')}<th>Status</th><th></th></tr></thead><tbody>` +
+    rows.map((r,i)=>`<tr>${c.cols.map(([f])=>`<td>${esc(r[f])}</td>`).join('')}<td>${r.aktif==='N'?'<span class="mut">Nonaktif</span>':'Aktif'}</td>
+    <td><button class="btn sec sm" data-ed="${i}">Edit</button> <button class="btn sec sm" data-tg="${i}">${r.aktif==='N'?'Aktifkan':'Nonaktifkan'}</button></td></tr>`).join('') + '</tbody></table></div>';
+  $('mOut').innerHTML = h;
+  let editing = null;
+  const form = $('mForm');
+  $('mAdd').onclick = () => run($('mAdd'), async () => {
+    const d = {}; form.querySelectorAll('[data-f]').forEach(e=>d[e.dataset.f]=e.value.trim());
+    if (editing) { d[c.key === 'pin' ? 'pin_lama' : 'id'] = editing[c.key]; if (c.key==='id') d.id = editing.id; d.aktif = editing.aktif; }
+    await api('saveMaster', { sheet:name, data:d }); await refreshBoot(); toast('Tersimpan'); loadMaster(name);
+  });
+  $('mOut').querySelectorAll('[data-ed]').forEach(b=>b.onclick=()=>{
+    editing = rows[b.dataset.ed];
+    form.querySelectorAll('[data-f]').forEach(e=>e.value=editing[e.dataset.f]||'');
+    $('mAdd').textContent='Simpan perubahan'; form.scrollIntoView({behavior:'smooth'});
+  });
+  $('mOut').querySelectorAll('[data-tg]').forEach(b=>b.onclick=()=>run(b, async()=>{
+    const r = {...rows[b.dataset.tg]}; if (name==='Users') r.pin_lama = r.pin; r.aktif = r.aktif==='N'?'Y':'N';
+    await api('saveMaster',{sheet:name,data:r}); await refreshBoot(); loadMaster(name);
+  }));
+  if (name==='Karyawan') $('mImp').onclick = () => run($('mImp'), async () => {
+    const list = $('mBulk').value.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const [nama,profesi,unit]=l.split(';').map(x=>(x||'').trim());return {nama,profesi,unit};});
+    const r = await api('importKaryawan',{rows:list}); await refreshBoot(); toast(`${r.ditambah} ditambah, ${r.dilewati} dilewati`); loadMaster(name);
+  });
+}
+async function refreshBoot(){ M = await api('bootstrap'); refreshKaryawan(); refreshTindakan(); }
+
+/* ===== AUTO-LOGIN SESI ===== */
+(async () => {
+  let p=''; try{ p = sessionStorage.getItem('siok_pin')||''; }catch(e){}
+  if (!p || API_URL==='API_URL') return;
+  PIN = p;
+  try { M = await api('bootstrap'); ME = M.user; start(); } catch(e){ PIN=''; }
+})();
+</script>
+</body>
+</html>
